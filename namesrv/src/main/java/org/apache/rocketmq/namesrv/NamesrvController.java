@@ -84,6 +84,7 @@ public class NamesrvController {
 
         this.registerProcessor();
 
+        // 定时扫描失效的broker
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -91,7 +92,7 @@ public class NamesrvController {
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
-
+        // 定时打印配置信息
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -141,6 +142,8 @@ public class NamesrvController {
         return true;
     }
 
+    // 注册处理器处理 底层remoting模块收到的消息
+    // 主要逻辑在DefaultRequestProcessor中进行
     private void registerProcessor() {
         if (namesrvConfig.isClusterTest()) {
 
