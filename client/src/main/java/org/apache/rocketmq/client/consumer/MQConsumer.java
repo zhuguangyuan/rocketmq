@@ -26,6 +26,11 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 
 /**
  * Message queue consumer interface
+ * 继承自MQAdmin
+ *  创建主题
+ *  获取 MessageQueue 特定 offset 处的消息
+ * 消息消费失败的处理
+ * 获取指定主题下的所有 MessageQueue
  */
 public interface MQConsumer extends MQAdmin {
     /**

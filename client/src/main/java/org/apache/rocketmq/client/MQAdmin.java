@@ -24,6 +24,8 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 
 /**
  * Base interface for MQ management
+ * 创建主题
+ * 获取 MessageQueue 特定 Offset 处的消息
  */
 public interface MQAdmin {
     /**

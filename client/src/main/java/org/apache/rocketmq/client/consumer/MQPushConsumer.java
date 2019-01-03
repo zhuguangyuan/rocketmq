@@ -23,6 +23,14 @@ import org.apache.rocketmq.client.exception.MQClientException;
 
 /**
  * Push consumer
+ * 1.继承自MQConsumer
+ *  创建主题
+ *  获取 messagequeue 特定 offset 处的消息
+ *  消息消费失败的处理
+ *  获取指定主题下的所有 messagequeue
+ * 2.启动/停止 暂停/唤醒
+ *  注册监听器
+ *  订阅特定主题 
  */
 public interface MQPushConsumer extends MQConsumer {
     /**
