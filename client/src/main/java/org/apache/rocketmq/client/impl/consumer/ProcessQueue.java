@@ -36,6 +36,10 @@ import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 
 /**
  * Queue consumption snapshot
+ * 组成
+ *      lock 控制多个线程对TreeMap的并发访问
+ *      TreeMap<offset,Message> 存储从MessageQueue中获取到但还未处理的消息
+ * 有了此对象，可以随时停止、启动消息的消费，同时也可以用于实现消息的顺序消费
  */
 public class ProcessQueue {
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =

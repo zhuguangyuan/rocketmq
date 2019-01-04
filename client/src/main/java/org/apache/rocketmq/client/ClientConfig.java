@@ -24,23 +24,29 @@ import org.apache.rocketmq.remoting.protocol.LanguageCode;
 
 /**
  * Client Common configuration
+ * RocketMQ 的客户端(包括producer和consumer) 的通用配置
  */
 public class ClientConfig {
     public static final String SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY = "com.rocketmq.sendMessageWithVIPChannel";
     private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
     private String clientIP = RemotingUtil.getLocalAddress();
+    // 一般情况下一个JVM需要一个MQClientInstance即可
+    // 如果用户配置没有指定客户端的名字，默认为DEFAULT
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
     /**
      * Pulling topic information interval from the named server
+     * 从 nameServer 处拉取 topic 信息的周期
      */
     private int pollNameServerInterval = 1000 * 30;
     /**
      * Heartbeat interval in microseconds with message broker
+     * 与 broker 的心跳周期
      */
     private int heartbeatBrokerInterval = 1000 * 30;
     /**
      * Offset persistent interval for consumer
+     * 为 consumer 保留 offset 的有效时间
      */
     private int persistConsumerOffsetInterval = 1000 * 5;
     private boolean unitMode = false;
@@ -51,6 +57,11 @@ public class ClientConfig {
 
     private LanguageCode language = LanguageCode.JAVA;
 
+    /**
+     * 创建 ClientId
+     * 同一个Ip下若指定Client 的IntanceName 则可以生成不同的ClientId
+     * @return
+     */
     public String buildMQClientId() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClientIP());
@@ -77,6 +88,11 @@ public class ClientConfig {
         return instanceName;
     }
 
+    /**
+     * 设置该客户端的InstanceName
+     * 即MQClientInstance的Name
+     * @param instanceName
+     */
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
     }

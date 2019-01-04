@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.client.hook;
 
+/**
+ * 消费消息 前后 的处理函数(可以增加一些额外的逻辑)
+ */
 public interface ConsumeMessageHook {
     String hookName();
 

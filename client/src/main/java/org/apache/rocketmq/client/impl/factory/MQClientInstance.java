@@ -82,6 +82,25 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
+/**
+ * 20190104 bruce
+ * MQClientInstance 是客户端各种类型的Consumer/producer 的底层类
+ * 这个类首先从NameServer获取并保存各种配置信息，比如topic的route信息。
+ * 同时MQClientInsatance 还会通过MQClientAPIImpl类实现消息的收发。
+ *
+ * 一个MQClientInstance 可以被多个Consumer/Produer共用。
+ * 普通情况下，一个用到RocketMQ客户端的java程序，或者说一个JVM进程
+ * 只要一个MQClientInstance实例就够了。
+ *
+ * 但是当一个java程序需要连接两个RocketMQ集群，从一个集群中读取消息，
+ * 发送到另一个集群，此时就需要两个MQClientInstance.此时就需要手动
+ * 指定不同InstanceName，底层会创建两个MQClientInstance对象。
+ *
+ * 在quick start文档中创建一个DefaultMQPushConsumer来接收消息，没有设置
+ * 这个Consumer的InstanceName参数(通过setInstanceName()来进行设置)，这个
+ * 时候InstanceName就是默认的“DEFAULT”。实际创建的MQClientInstance个数由
+ * 设定的逻辑进行控制。
+ */
 public class MQClientInstance {
     private final static long LOCK_TIMEOUT_MILLIS = 3000;
     private final InternalLogger log = ClientLogger.getLog();
@@ -255,6 +274,12 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 启动线程定时从 nameserver
+     *      获取topicRouteInfo/brokerAddr
+     *      清理离线的 broker
+     *      保存 consumer 的offset
+     */
     private void startScheduledTask() {
         if (null == this.clientConfig.getNamesrvAddr()) {
             this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {

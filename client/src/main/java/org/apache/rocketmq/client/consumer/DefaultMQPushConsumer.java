@@ -53,6 +53,16 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
  * <p>
  * <strong>Thread Safety:</strong> After initialization, the instance can be regarded as thread-safe.
  * </p>
+ *
+ * 继承了客户端配置 ClientConfig
+ * 实现了 MQPushConsumer
+ *  创建topic
+ *  在指定messageQueue上的指定offset处获取消息
+ *  消费失败的处理
+ *  启动关闭 暂停唤醒
+ *  注册监听器
+ *  订阅特定topic
+ * 大多数方法都是代理给了内部默认实现类 DefaultMQPushConsumerImpl 的相应方法
  */
 public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsumer {
 
@@ -78,9 +88,19 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * the same {@link #consumerGroup} would only consume shards of the messages subscribed, which achieves load
      * balances; Conversely, if the broadcasting is set, each consumer client will consume all subscribed messages
      * separately.
+     * 集群模式cluster:
+     *      投递过来的消息只能被消费组中的某个消费者消费，消费失败会重投递，但不保证投给之前消费失败的那个消费者
+     *      broker保存消费进度offset。主要用于负载均衡
+     * 广播模式broadcasting：
+     *      投递过来的消息可以被消费组中的任何一个消费者消费，不会进行失败重投
+     *      每个消费者自己保存消费进度offset。
+     * 采用集群模式可以模拟广播模式：
+     *      假设c1,c2,c3都要消费topic1的消息，则可以将c1,c2,c3分别单独放到g1,g2,g3三个组，三个组都订阅topic1
      * </p>
      *
      * This field defaults to clustering.
+     * 默认 消费组中的消费者消费所订阅主题的一部分信息 以达到负载均衡
+     *
      */
     private MessageModel messageModel = MessageModel.CLUSTERING;
 
@@ -118,6 +138,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
 
     /**
+     * 记录半小时前的消费时间戳
      * Backtracking consumption time with second precision. Time format is
      * 20131223171201<br>
      * Implying Seventeen twelve and 01 seconds on December 23, 2013 year<br>
@@ -246,6 +267,11 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      */
     private long consumeTimeout = 15;
 
+
+    /***********************************************************************
+     * 构造函数
+     ***********************************************************************
+     */
     /**
      * Default constructor.
      */
@@ -285,6 +311,10 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this(consumerGroup, null, new AllocateMessageQueueAveragely());
     }
 
+    /***********************************************************************
+     * 实现 MQAdmin 接口的方法
+     ***********************************************************************
+     */
     @Override
     public void createTopic(String key, String newTopic, int queueNum) throws MQClientException {
         createTopic(key, newTopic, queueNum, 0);
@@ -339,6 +369,11 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         return this.defaultMQPushConsumerImpl.queryMessageByUniqKey(topic, msgId);
     }
 
+
+    /***********************************************************************
+     * getter/setter
+     ***********************************************************************
+     */
     public AllocateMessageQueueStrategy getAllocateMessageQueueStrategy() {
         return allocateMessageQueueStrategy;
     }
@@ -471,6 +506,10 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.subscription = subscription;
     }
 
+    /***********************************************************************
+     * 实现 MQConsumer 接口的方法
+     ***********************************************************************
+     */
     /**
      * Send message back to broker which will be re-delivered in future.
      *
@@ -510,6 +549,13 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         return this.defaultMQPushConsumerImpl.fetchSubscribeMessageQueues(topic);
     }
 
+
+
+    /***********************************************************************
+     * 实现 MQPushConsumer 接口的方法
+     * 订阅消息方法 subscribe 支持多种过滤方式
+     ***********************************************************************
+     */
     /**
      * This method gets internal infrastructure readily to serve. Instances must call this method after configuration.
      *
@@ -631,6 +677,11 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.defaultMQPushConsumerImpl.resume();
     }
 
+
+    /***********************************************************************
+     * 其他getter/setter
+     ***********************************************************************
+     */
     public OffsetStore getOffsetStore() {
         return offsetStore;
     }

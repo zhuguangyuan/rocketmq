@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.client.hook;
 
+/**
+ * 过滤消息的 hook
+ */
 public interface FilterMessageHook {
     String hookName();
 
