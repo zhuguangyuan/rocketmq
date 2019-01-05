@@ -38,7 +38,29 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.srvutil.FileWatchService;
 
-
+/**
+ * 名称服务器 的 控制器
+ * 主要包含
+ *      本身的配置信息
+ *          NamesrvConfig
+ *      管理broker的相关属性
+ *          RouteInfoManager--维护集群及broker的元数据
+ *              topicQueueTable
+ *              clusterAddrTable
+ *              brokerAddrTable
+ *              liveInfoTable
+ *              filterServerTable
+ *      管理底层通信的相关属性
+ *          NettyServerConfig
+ *          BrokerHousekeepingService(继承自ChannelEventListener)
+ *          RemotingServer(负责底层RemotingCommand的收发)
+ *      处理请求的处理器
+ *          registerProcessor--DefaultRequestProcessor
+ *              本身的config更新(运维人员通过ter)
+ *              获取broker集群的信息/注册broker(来自broker)
+ *              获取topic信息(来自Consumer/Producer)
+ *              // 这些信息的处理都是代理 RouteInfoManager的相应处理方法
+ */
 public class NamesrvController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
@@ -48,11 +70,13 @@ public class NamesrvController {
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "NSScheduledThread"));
+    // 本身的配置信息,启动定时线程周期性打印
     private final KVConfigManager kvConfigManager;
+    // 管理的broker集群信息
     private final RouteInfoManager routeInfoManager;
-
+    // 底层通信服务
     private RemotingServer remotingServer;
-
+    // 与broker链接的channel状态管理
     private BrokerHousekeepingService brokerHousekeepingService;
 
     private ExecutorService remotingExecutor;
@@ -73,15 +97,19 @@ public class NamesrvController {
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
 
+    /**
+     * 初始化nameserver的控制器
+     * @return
+     */
     public boolean initialize() {
-
+        // 加载配置信息
         this.kvConfigManager.load();
-
+        // 创建底层通信服务
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
 
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
-
+        // 注册 请求的处理器
         this.registerProcessor();
 
         // 定时扫描失效的broker
@@ -92,7 +120,7 @@ public class NamesrvController {
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
-        // 定时打印配置信息
+        // 定时打印本身的配置信息
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override

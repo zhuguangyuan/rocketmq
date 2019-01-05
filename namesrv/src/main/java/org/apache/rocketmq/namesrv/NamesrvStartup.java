@@ -41,6 +41,10 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 名称服务器 启动类
+ * 创建 nameserverController 并启动
+ */
 public class NamesrvStartup {
 
     private static InternalLogger log;
