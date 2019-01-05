@@ -42,6 +42,9 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
+/**
+ * 处理和客户端MQClientInstance的心跳
+ */
 public class ClientManageProcessor implements NettyRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerController brokerController;
@@ -71,6 +74,16 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         return false;
     }
 
+    /**
+     * 处理与客户端 MQClientInstance 的心跳
+     * 1.解码接收到的消息,封装成HeartbeatData对象
+     * 2.根据连接的Channel\ClientId等信息初始化一个ClientChannelInfo对象
+     * 3.若 HeartbeatData 对象中的 ConsumerData 集合有数据, 则进行 Consumer 注册
+     * 4.若 HeartbeatData 对象中的 ProducerData 集合有数据, 则进行 Producer 注册
+     * @param ctx
+     * @param request
+     * @return
+     */
     public RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
