@@ -157,6 +157,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
+            // 读取brokerConfig中配置的nameserver的地址
             String namesrvAddr = brokerConfig.getNamesrvAddr();
             if (null != namesrvAddr) {
                 try {
@@ -172,6 +173,7 @@ public class BrokerStartup {
                 }
             }
 
+            // 检查broker角色 master/slave
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
@@ -188,7 +190,10 @@ public class BrokerStartup {
                     break;
             }
 
+            // slave监听的端口号默认为对应master监听端口号 +1
             messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
+            // Date 2019-01-07 11:40:16
+            // 日志打印相关
             LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(lc);
@@ -225,6 +230,11 @@ public class BrokerStartup {
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);
 
+            // Date 2019-01-07 11:41:49
+            // 控制器的初始化 
+            // 完成store目录下的各个consumeQueue/commitLog等文件的加载 及配置的加载
+            // 以及线程池的创建 处理器的注册
+            // BrokerController.start()才是服务的实际启动
             boolean initResult = controller.initialize();
             if (!initResult) {
                 controller.shutdown();

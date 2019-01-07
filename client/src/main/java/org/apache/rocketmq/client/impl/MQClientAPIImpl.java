@@ -936,6 +936,20 @@ public class MQClientAPIImpl {
         return response.getCode() == ResponseCode.SUCCESS;
     }
 
+    /**
+     * 消费失败，将消息打回broker
+     * 执行见 DefaultMQPushConsumer.sendMessageBack()
+     * broker端的处理方法是 SendMessageProcessor.consumerSendMsgBack()
+     * @param addr
+     * @param msg
+     * @param consumerGroup
+     * @param delayLevel
+     * @param timeoutMillis
+     * @param maxConsumeRetryTimes
+     * @throws RemotingException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     */
     public void consumerSendMessageBack(
         final String addr,
         final MessageExt msg,

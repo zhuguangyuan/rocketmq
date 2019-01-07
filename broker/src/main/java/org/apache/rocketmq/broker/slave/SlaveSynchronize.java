@@ -30,6 +30,7 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
 /**
  * slave 角色的broker 从master处同步数据
+ * 同步topicConfig/consumeOffset/delayOffset/subscriptionGroupConfig
  */
 public class SlaveSynchronize {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

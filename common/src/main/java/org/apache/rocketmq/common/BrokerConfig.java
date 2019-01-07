@@ -25,6 +25,10 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
 
+/**
+ * @Date 2019-01-07 11:34:26
+ * @Description broker相关配置
+ */
 public class BrokerConfig {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
@@ -34,8 +38,13 @@ public class BrokerConfig {
     @ImportantField
     private String brokerIP1 = RemotingUtil.getLocalAddress();
     private String brokerIP2 = RemotingUtil.getLocalAddress();
+
+    // Date 2019-01-07 11:26:35
+    // broker的名字。Master和Slave通过使用相同的brokerName来表明相互关系,说明slave属于哪个master
+    // brokerId=0表示master brokerId>0表示slave
     @ImportantField
     private String brokerName = localHostName();
+    
     @ImportantField
     private String brokerClusterName = "DefaultCluster";
     @ImportantField
@@ -119,6 +128,7 @@ public class BrokerConfig {
     private long waitTimeMillsInHeartbeatQueue = 31 * 1000;
     private long waitTimeMillsInTransactionQueue = 3 * 1000;
 
+    // 能接受的请求时间戳范围
     private long startAcceptSendRequestTimeStamp = 0L;
 
     private boolean traceOn = true;

@@ -102,36 +102,59 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
 /**
  * broker 的控制器
- *      四种配置信息
+ *      5种配置信息
  *          BrokerConfig
  *          NettyServerConfig
  *          NettyClientConfig
  *          MessageStoreConfig
+ *          TopicConfigManager - 动态
+ *      5种处理器(都引用此controller,且各有相应的线程池及内部队列)
+ *          sendMessageProcessor
+ *          pullMessageProcessor
+ *          queryMessageProcessor
+ *          clientManager
  */
 public class BrokerController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final InternalLogger LOG_PROTECTION = InternalLoggerFactory.getLogger(LoggerName.PROTECTION_LOGGER_NAME);
     private static final InternalLogger LOG_WATER_MARK = InternalLoggerFactory.getLogger(LoggerName.WATER_MARK_LOGGER_NAME);
+
+    // Date 2019-01-07 11:58:36
+    // 四个配置
     private final BrokerConfig brokerConfig;
     private final NettyServerConfig nettyServerConfig;
     private final NettyClientConfig nettyClientConfig;
     private final MessageStoreConfig messageStoreConfig;
+
     private final ConsumerOffsetManager consumerOffsetManager;
     private final ConsumerManager consumerManager;
     private final ConsumerFilterManager consumerFilterManager;
     private final ProducerManager producerManager;
+
     private final ClientHousekeepingService clientHousekeepingService;
+
     private final PullMessageProcessor pullMessageProcessor;
+
     private final PullRequestHoldService pullRequestHoldService;
+
     private final MessageArrivingListener messageArrivingListener;
     private final Broker2Client broker2Client;
+
     private final SubscriptionGroupManager subscriptionGroupManager;
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
+
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
     private final BrokerOuterAPI brokerOuterAPI;
+
+    // 定时任务
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "BrokerControllerScheduledThread"));
+
+    // slave从master同步消费管理相关数据。定时同步任务中用到
     private final SlaveSynchronize slaveSynchronize;
+
+    // Date 2019-01-07 11:50:31
+    // 请求处理器线程池 的内部队列
     private final BlockingQueue<Runnable> sendThreadPoolQueue;
     private final BlockingQueue<Runnable> pullThreadPoolQueue;
     private final BlockingQueue<Runnable> queryThreadPoolQueue;
@@ -139,6 +162,7 @@ public class BrokerController {
     private final BlockingQueue<Runnable> heartbeatThreadPoolQueue;
     private final BlockingQueue<Runnable> consumerManagerThreadPoolQueue;
     private final BlockingQueue<Runnable> endTransactionThreadPoolQueue;
+
     private final FilterServerManager filterServerManager;
     private final BrokerStatsManager brokerStatsManager;
     private final List<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
@@ -147,6 +171,9 @@ public class BrokerController {
     private RemotingServer remotingServer;
     private RemotingServer fastRemotingServer;
     private TopicConfigManager topicConfigManager;
+
+    // Date 2019-01-07 11:50:10
+    // 请求处理器 使用的线程池
     private ExecutorService sendMessageExecutor;
     private ExecutorService pullMessageExecutor;
     private ExecutorService queryMessageExecutor;
@@ -155,6 +182,7 @@ public class BrokerController {
     private ExecutorService heartbeatExecutor;
     private ExecutorService consumerManageExecutor;
     private ExecutorService endTransactionExecutor;
+
     private boolean updateMasterHAServerAddrPeriodically = false;
     private BrokerStats brokerStats;
     private InetSocketAddress storeHost;
@@ -518,6 +546,11 @@ public class BrokerController {
         this.transactionalMessageCheckService = new TransactionalMessageCheckService(this);
     }
 
+    /**
+     * @Date 2019-01-07 11:53:28
+     * @Description 注册请求处理器 传入相应的请求码 及 处理线程池
+     * 注意处理器持有此controller的引用
+     */
     public void registerProcessor() {
         /**
          * SendMessageProcessor

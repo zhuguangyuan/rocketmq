@@ -56,19 +56,22 @@ import java.util.Map;
 public class SendMessageProcessor extends AbstractSendMessageProcessor implements NettyRequestProcessor {
 
     private List<ConsumeMessageHook> consumeMessageHookList;
-
+    
     public SendMessageProcessor(final BrokerController brokerController) {
         super(brokerController);
     }
-
+    
+    /**
+     * 处理客户端的请求 并生成response返回
+     */
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
                                           RemotingCommand request) throws RemotingCommandException {
         SendMessageContext mqtraceContext;
         switch (request.getCode()) {
-            case RequestCode.CONSUMER_SEND_MSG_BACK:
+            case RequestCode.CONSUMER_SEND_MSG_BACK:// 客户端消费失败，重新打回的消息
                 return this.consumerSendMsgBack(ctx, request);
-            default:
+            default:// 其他消息
                 SendMessageRequestHeader requestHeader = parseRequestHeader(request);
                 if (requestHeader == null) {
                     return null;
@@ -95,6 +98,14 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             this.brokerController.getMessageStore().isTransientStorePoolDeficient();
     }
 
+    /**
+     * 客户端消费失败 打回的消息 的处理
+     * 和consumer端的 MQClientAPIImpl.consumerSendMessageBack()对应
+     * @param ctx
+     * @param request
+     * @return
+     * @throws RemotingCommandException
+     */
     private RemotingCommand consumerSendMsgBack(final ChannelHandlerContext ctx, final RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
@@ -292,6 +303,16 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         return true;
     }
 
+    /**
+     * 处理客户端的请求 
+     * 解析消息并进行处理 然后存储 生成response
+     * @param ctx
+     * @param request
+     * @param sendMessageContext
+     * @param requestHeader
+     * @return
+     * @throws RemotingCommandException
+     */
     private RemotingCommand sendMessage(final ChannelHandlerContext ctx,
                                         final RemotingCommand request,
                                         final SendMessageContext sendMessageContext,
@@ -315,6 +336,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
 
         response.setCode(-1);
+        
+        // msg 检测
         super.msgCheck(ctx, requestHeader, response);
         if (response.getCode() != -1) {
             return response;
@@ -365,6 +388,18 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
     }
 
+    /**
+     * 处理 消息的存储结果 
+     * @param putMessageResult
+     * @param response
+     * @param request
+     * @param msg
+     * @param responseHeader
+     * @param sendMessageContext
+     * @param ctx
+     * @param queueIdInt
+     * @return
+     */
     private RemotingCommand handlePutMessageResult(PutMessageResult putMessageResult, RemotingCommand response,
                                                    RemotingCommand request, MessageExt msg,
                                                    SendMessageResponseHeader responseHeader, SendMessageContext sendMessageContext, ChannelHandlerContext ctx,

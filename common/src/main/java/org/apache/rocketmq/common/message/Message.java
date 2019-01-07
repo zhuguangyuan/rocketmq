@@ -22,11 +22,24 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @Date 2019-01-07 10:56:36
+ * @Description 此消息格式主要用于 生产者发送
+ * 最基本的只需指定topic body
+ * broker会对收到的消息进行处理 并增加一些管理字段 构造成MessageExt 用于存储及供消费者消费
+ */
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
 
+    // Date 2019-01-07 11:11:48
+    // 最佳实践：
+    // 每个消息在业务层的唯一标识码,要设置到keys字段，方便将来定位信息丢失问题。
+    // broker会为每个消息创建哈希索引，应用可以通过topic/key来查询这条消息的内容及被谁消费了。
+    // 应尽可能保证keys唯一，避免潜在的哈希冲突。比如可以将订单号设置为keys
     private String topic;
     private int flag;
+
+    // 用于存储消息的 tags keys等
     private Map<String, String> properties;
     private byte[] body;
     private String transactionId;

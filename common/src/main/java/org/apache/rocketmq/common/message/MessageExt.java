@@ -22,6 +22,10 @@ import java.nio.ByteBuffer;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 
+/**
+ * @Date 2019-01-07 11:02:01
+ * @Description broker接收到 Message后进行处理 包装成此格式 用于存储及供消费者消费
+ */
 public class MessageExt extends Message {
     private static final long serialVersionUID = 5720810158625748049L;
 
